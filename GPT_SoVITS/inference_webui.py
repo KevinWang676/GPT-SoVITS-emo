@@ -49,7 +49,7 @@ is_share = os.environ.get("is_share", "False")
 is_share = eval(is_share)
 if "_CUDA_VISIBLE_DEVICES" in os.environ:
     os.environ["CUDA_VISIBLE_DEVICES"] = os.environ["_CUDA_VISIBLE_DEVICES"]
-is_half = eval(os.environ.get("is_half", "True")) and torch.cuda.is_available()
+is_half = eval(os.environ.get("is_half", "True")) and not torch.backends.mps.is_available()
 import gradio as gr
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 import numpy as np
@@ -69,7 +69,7 @@ from tools.i18n.i18n import I18nAuto
 
 i18n = I18nAuto()
 
-# os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'  # 确保直接启动推理UI时也能够设置。
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'  # 确保直接启动推理UI时也能够设置。
 
 if torch.cuda.is_available():
     device = "cuda"
@@ -331,8 +331,8 @@ def get_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language,
     )
     with torch.no_grad():
         wav16k, sr = librosa.load(ref_wav_path, sr=16000)
-        if (wav16k.shape[0] > 160000 or wav16k.shape[0] < 48000):
-            raise OSError(i18n("参考音频在3~10秒范围外，请更换！"))
+        if (wav16k.shape[0] > 240000 or wav16k.shape[0] < 48000):
+            raise OSError(i18n("参考音频在3~15秒范围外，请更换！"))
         wav16k = torch.from_numpy(wav16k)
         zero_wav_torch = torch.from_numpy(zero_wav)
         if is_half == True:
@@ -563,7 +563,7 @@ with gr.Blocks(title="GPT-SoVITS WebUI") as app:
             GPT_dropdown.change(change_gpt_weights, [GPT_dropdown], [])
         gr.Markdown(value=i18n("*请上传并填写参考信息"))
         with gr.Row():
-            inp_ref = gr.Audio(label=i18n("请上传3~10秒内参考音频，超过会报错！"), type="filepath")
+            inp_ref = gr.Audio(label=i18n("请上传3~15秒内参考音频，超过会报错！"), type="filepath")
             with gr.Column():
                 ref_text_free = gr.Checkbox(label=i18n("开启无参考文本模式。不填参考文本亦相当于开启。"), value=False, interactive=True, show_label=True)
                 gr.Markdown(i18n("使用无参考文本模式时建议使用微调的GPT，听不清参考音频说的啥(不晓得写啥)可以开，开启后无视填写的参考文本。"))
@@ -616,7 +616,7 @@ with gr.Blocks(title="GPT-SoVITS WebUI") as app:
 app.queue(concurrency_count=511, max_size=1022).launch(
     server_name="0.0.0.0",
     inbrowser=True,
-    share=is_share,
+    share=True,
     server_port=infer_ttswebui,
     quiet=True,
 )

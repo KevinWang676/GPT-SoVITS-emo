@@ -6,7 +6,17 @@
 全部按英文识别
 全部按日文识别
 '''
-import os, re, logging
+
+# OpenVoice
+
+import os
+import torch
+from openvoice import se_extractor
+from openvoice.api import BaseSpeakerTTS, ToneColorConverter
+
+# End
+
+import re, logging
 import LangSegment
 logging.getLogger("markdown_it").setLevel(logging.ERROR)
 logging.getLogger("urllib3").setLevel(logging.ERROR)
@@ -16,7 +26,6 @@ logging.getLogger("asyncio").setLevel(logging.ERROR)
 logging.getLogger("charset_normalizer").setLevel(logging.ERROR)
 logging.getLogger("torchaudio._extension").setLevel(logging.ERROR)
 import pdb
-import torch
 
 if os.path.exists("./gweight.txt"):
     with open("./gweight.txt", 'r', encoding="utf-8") as file:

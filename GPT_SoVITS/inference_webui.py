@@ -48,7 +48,7 @@ def vc_en(text, audio_ref, style_mode):
         message=encode_message)
 
   else:
-    source_se = torch.load(f'{ckpt_base_en}/en_style_se.pth').to(device)
+    source_se = torch.load(f'{ckpt_base}/en_style_se.pth').to(device)
     reference_speaker = audio_ref
     target_se, audio_name = se_extractor.get_se(reference_speaker, tone_color_converter, target_dir='processed', vad=True)
 

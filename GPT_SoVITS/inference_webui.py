@@ -30,7 +30,8 @@ tone_color_converter.load_ckpt(f'{ckpt_converter}/checkpoint.pth')
 source_se = torch.load(f'{ckpt_base}/en_default_se.pth').to(device)
 source_se_style = torch.load(f'{ckpt_base}/en_style_se.pth').to(device)
 
-def vc_en(text, audio_ref, style_mode):
+def vc_en(audio_ref, style_mode):
+  text = "We have always tried to be at the intersection of technology and liberal arts, to be able to get the best of both, to make extremely advanced products from a technology point of view."
   if style_mode=="default":
     source_se = source_se #torch.load(f'{ckpt_base}/en_default_se.pth').to(device)
     reference_speaker = audio_ref
@@ -625,7 +626,11 @@ with gr.Blocks(title="GPT-SoVITS WebUI") as app:
             GPT_dropdown.change(change_gpt_weights, [GPT_dropdown], [])
         gr.Markdown(value=i18n("*请上传并填写参考信息"))
         with gr.Row():
-            inp_ref = gr.Audio(label=i18n("请上传3~15秒内参考音频，超过会报错！"), type="filepath")
+            inp_training_audio = gr.Audio(label="请上传您完整的1分钟训练音频", type="filepath")
+            style_control = gr.Dropdown(label="请选择一种语音情感", info="🙂default😊friendly🤫whispering😄cheerful😱terrified😡angry😢sad", choices=["default", "friendly", "whispering", "cheerful", "terrified", "angry", "sad"], value="default")
+            btn_style = gr.Button("一键生成情感参考音频吧💕", value="primary")
+            out_ref_audio = gr.Audio(label="为您生成的情感参考音频", type="filepath")
+            inp_ref = out_ref_audio
             with gr.Column():
                 ref_text_free = gr.Checkbox(label=i18n("开启无参考文本模式。不填参考文本亦相当于开启。"), value=False, interactive=True, show_label=True)
                 gr.Markdown(i18n("使用无参考文本模式时建议使用微调的GPT，听不清参考音频说的啥(不晓得写啥)可以开，开启后无视填写的参考文本。"))
@@ -673,6 +678,7 @@ with gr.Blocks(title="GPT-SoVITS WebUI") as app:
             button3.click(cut3, [text_inp], [text_opt])
             button4.click(cut4, [text_inp], [text_opt])
             button5.click(cut5, [text_inp], [text_opt])
+            btn_style.click(vc_en, [inp_training_audio, style_control], [out_ref_audio])
         gr.Markdown(value=i18n("后续将支持转音素、手工修改音素、语音合成分步执行。"))
 
 app.queue(concurrency_count=511, max_size=1022).launch(

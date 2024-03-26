@@ -27,13 +27,13 @@ base_speaker_tts.load_ckpt(f'{ckpt_base}/checkpoint.pth')
 tone_color_converter = ToneColorConverter(f'{ckpt_converter}/config.json', device=device)
 tone_color_converter.load_ckpt(f'{ckpt_converter}/checkpoint.pth')
 
-source_se = torch.load(f'{ckpt_base}/en_default_se.pth').to(device)
-source_se_style = torch.load(f'{ckpt_base}/en_style_se.pth').to(device)
+#source_se = torch.load(f'{ckpt_base}/en_default_se.pth').to(device)
+#source_se_style = torch.load(f'{ckpt_base}/en_style_se.pth').to(device)
 
 def vc_en(audio_ref, style_mode):
   text = "We have always tried to be at the intersection of technology and liberal arts, to be able to get the best of both, to make extremely advanced products from a technology point of view."
   if style_mode=="default":
-    source_se = source_se #torch.load(f'{ckpt_base}/en_default_se.pth').to(device)
+    source_se = torch.load(f'{ckpt_base}/en_default_se.pth').to(device)
     reference_speaker = audio_ref
     target_se, audio_name = se_extractor.get_se(reference_speaker, tone_color_converter, target_dir='processed', vad=True)
     save_path = "output.wav"
@@ -52,7 +52,7 @@ def vc_en(audio_ref, style_mode):
         message=encode_message)
 
   else:
-    source_se = source_se_style #torch.load(f'{ckpt_base}/en_style_se.pth').to(device)
+    source_se = torch.load(f'{ckpt_base}/en_style_se.pth').to(device)
     reference_speaker = audio_ref
     target_se, audio_name = se_extractor.get_se(reference_speaker, tone_color_converter, target_dir='processed', vad=True)
 

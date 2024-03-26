@@ -628,7 +628,7 @@ with gr.Blocks(title="GPT-SoVITS WebUI") as app:
         with gr.Row():
             inp_training_audio = gr.Audio(label="请上传您完整的1分钟训练音频", type="filepath")
             style_control = gr.Dropdown(label="请选择一种语音情感", info="🙂default😊friendly🤫whispering😄cheerful😱terrified😡angry😢sad", choices=["default", "friendly", "whispering", "cheerful", "terrified", "angry", "sad"], value="default")
-            btn_style = gr.Button("一键生成情感参考音频吧💕", value="primary")
+            btn_style = gr.Button("一键生成情感参考音频吧💕", variant="primary")
             out_ref_audio = gr.Audio(label="为您生成的情感参考音频", type="filepath")
             inp_ref = out_ref_audio
             with gr.Column():

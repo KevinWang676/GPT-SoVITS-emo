@@ -632,11 +632,11 @@ with gr.Blocks(title="GPT-SoVITS WebUI") as app:
             out_ref_audio = gr.Audio(label="为您生成的情感参考音频", type="filepath")
             inp_ref = out_ref_audio
             with gr.Column():
-                ref_text_free = gr.Checkbox(label=i18n("开启无参考文本模式。不填参考文本亦相当于开启。"), value=False, interactive=True, show_label=True)
+                ref_text_free = gr.Checkbox(label=i18n("开启无参考文本模式。不填参考文本亦相当于开启。"), value=False, interactive=False, show_label=True)
                 gr.Markdown(i18n("使用无参考文本模式时建议使用微调的GPT，听不清参考音频说的啥(不晓得写啥)可以开，开启后无视填写的参考文本。"))
-                prompt_text = gr.Textbox(label=i18n("参考音频的文本"), value="")
+                prompt_text = gr.Textbox(label=i18n("参考音频的文本"), interactive=False, value="We have always tried to be at the intersection of technology and liberal arts, to be able to get the best of both, to make extremely advanced products from a technology point of view.")
             prompt_language = gr.Dropdown(
-                label=i18n("参考音频的语种"), choices=[i18n("中文"), i18n("英文"), i18n("日文"), i18n("中英混合"), i18n("日英混合"), i18n("多语种混合")], value=i18n("中文")
+                label=i18n("参考音频的语种"), choices=[i18n("中文"), i18n("英文"), i18n("日文"), i18n("中英混合"), i18n("日英混合"), i18n("多语种混合")], value=i18n("英文"), interactive=False
             )
         gr.Markdown(value=i18n("*请填写需要合成的目标文本和语种模式"))
         with gr.Row():

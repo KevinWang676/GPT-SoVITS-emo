@@ -733,7 +733,7 @@ with gr.Blocks() as app:
                 label="请选择SRT文件对应的语言",
                 choices=[i18n("中文"), i18n("英文"), i18n("日文"), i18n("中英混合"), i18n("日英混合"), i18n("多语种混合")],
                 max_choices=1,
-                value=i18n("中文"),
+                value=i18n("英文"),
             )
             inp4 = gr.Dropdown(label="请选择用于分离伴奏的模型", info="UVR-HP5去除背景音乐效果更好，但会对人声造成一定的损伤", choices=["UVR-HP2", "UVR-HP5"], value="UVR-HP5")
             inp5 = gr.Checkbox(label="SRT文件是否为双语字幕", info="若为双语字幕，请打勾选择（SRT文件中需要先出现中文字幕，后英文字幕；中英字幕各占一行）")

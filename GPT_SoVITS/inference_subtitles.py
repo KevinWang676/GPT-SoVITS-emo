@@ -83,6 +83,35 @@ if is_half == True:
 else:
     bert_model = bert_model.to(device)
 
+# denoising
+
+import ffmpeg
+import urllib.request
+urllib.request.urlretrieve("https://download.openxlab.org.cn/models/Kevin676/rvc-models/weight/UVR-HP2.pth", "uvr5/uvr_model/UVR-HP2.pth")
+urllib.request.urlretrieve("https://download.openxlab.org.cn/models/Kevin676/rvc-models/weight/UVR-HP5.pth", "uvr5/uvr_model/UVR-HP5.pth")
+
+from uvr5.vr import AudioPre
+weight_uvr5_root = "uvr5/uvr_model"
+uvr5_names = []
+for name in os.listdir(weight_uvr5_root):
+    if name.endswith(".pth") or "onnx" in name:
+        uvr5_names.append(name.replace(".pth", ""))
+
+func = AudioPre
+
+pre_fun_hp2 = func(
+  agg=int(10),
+  model_path=os.path.join(weight_uvr5_root, "UVR-HP2.pth"),
+  device="cuda",
+  is_half=True,
+)
+pre_fun_hp5 = func(
+  agg=int(10),
+  model_path=os.path.join(weight_uvr5_root, "UVR-HP5.pth"),
+  device="cuda",
+  is_half=True,
+)
+
 
 def get_bert_feature(text, word2ph):
     with torch.no_grad():
@@ -311,7 +340,9 @@ def merge_short_text_in_array(texts, threshold):
             result[len(result) - 1] += text
     return result
 
-def get_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language, how_to_cut=i18n("不切"), top_k=20, top_p=0.6, temperature=0.6, ref_free = False):
+from scipy.io.wavfile import write
+
+def get_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language, save_path, how_to_cut=i18n("不切"), top_k=20, top_p=0.6, temperature=0.6, ref_free = False):
     if prompt_text is None or len(prompt_text) == 0:
         ref_free = True
     t0 = ttime()
@@ -428,10 +459,10 @@ def get_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language,
         audio_opt.append(zero_wav)
         t4 = ttime()
     print("%.3f\t%.3f\t%.3f\t%.3f" % (t1 - t0, t2 - t1, t3 - t2, t4 - t3))
-    yield hps.data.sampling_rate, (np.concatenate(audio_opt, 0) * 32768).astype(
-        np.int16
-    )
 
+    write(f"output/{save_path}.wav", hps.data.sampling_rate, (np.concatenate(audio_opt, 0) * 32768).astype(np.int16))
+
+    return f"output/{save_path}.wav"
 
 def split(todo_text):
     todo_text = todo_text.replace("……", "。").replace("——", "，")
@@ -547,6 +578,149 @@ def get_weights_names():
 
 
 SoVITS_names, GPT_names = get_weights_names()
+
+# SRT
+
+class subtitle:
+    def __init__(self,index:int, start_time, end_time, text:str):
+        self.index = int(index)
+        self.start_time = start_time
+        self.end_time = end_time
+        self.text = text.strip()
+    def normalize(self,ntype:str,fps=30):
+         if ntype=="prcsv":
+              h,m,s,fs=(self.start_time.replace(';',':')).split(":")#seconds
+              self.start_time=int(h)*3600+int(m)*60+int(s)+round(int(fs)/fps,2)
+              h,m,s,fs=(self.end_time.replace(';',':')).split(":")
+              self.end_time=int(h)*3600+int(m)*60+int(s)+round(int(fs)/fps,2)
+         elif ntype=="srt":
+             h,m,s=self.start_time.split(":")
+             s=s.replace(",",".")
+             self.start_time=int(h)*3600+int(m)*60+round(float(s),2)
+             h,m,s=self.end_time.split(":")
+             s=s.replace(",",".")
+             self.end_time=int(h)*3600+int(m)*60+round(float(s),2)
+         else:
+             raise ValueError
+    def add_offset(self,offset=0):
+        self.start_time+=offset
+        if self.start_time<0:
+            self.start_time=0
+        self.end_time+=offset
+        if self.end_time<0:
+            self.end_time=0
+    def __str__(self) -> str:
+        return f'id:{self.index},start:{self.start_time},end:{self.end_time},text:{self.text}'
+
+def read_srt(uploaded_file):
+    offset=0
+    with open(uploaded_file.name,"r",encoding="utf-8") as f:
+        file=f.readlines()
+    subtitle_list=[]
+    indexlist=[]
+    filelength=len(file)
+    for i in range(0,filelength):
+        if " --> " in file[i]:
+            is_st=True
+            for char in file[i-1].strip().replace("\ufeff",""):
+                if char not in ['0','1','2','3','4','5','6','7','8','9']:
+                    is_st=False
+                    break
+            if is_st:
+                indexlist.append(i) #get line id
+    listlength=len(indexlist)
+    for i in range(0,listlength-1):
+        st,et=file[indexlist[i]].split(" --> ")
+        id=int(file[indexlist[i]-1].strip().replace("\ufeff",""))
+        text=""
+        for x in range(indexlist[i]+1,indexlist[i+1]-2):
+            text+=file[x]
+        st=subtitle(id,st,et,text)
+        st.normalize(ntype="srt")
+        st.add_offset(offset=offset)
+        subtitle_list.append(st)
+    st,et=file[indexlist[-1]].split(" --> ")
+    id=file[indexlist[-1]-1]
+    text=""
+    for x in range(indexlist[-1]+1,filelength):
+        text+=file[x]
+    st=subtitle(id,st,et,text)
+    st.normalize(ntype="srt")
+    st.add_offset(offset=offset)
+    subtitle_list.append(st)
+    return subtitle_list
+
+from pydub import AudioSegment
+
+def trim_audio(intervals, input_file_path, output_file_path):
+    # load the audio file
+    audio = AudioSegment.from_file(input_file_path)
+
+    # iterate over the list of time intervals
+    for i, (start_time, end_time) in enumerate(intervals):
+        # extract the segment of the audio
+        segment = audio[start_time*1000:end_time*1000]
+
+        # construct the output file path
+        output_file_path_i = f"{output_file_path}_{i}.wav"
+
+        # export the segment to a file
+        segment.export(output_file_path_i, format='wav')
+
+def merge_audios(folder_path):
+    output_file = "AI配音版.wav"
+    # Get all WAV files in the folder
+    files = [f for f in os.listdir(folder_path) if f.endswith('.wav')]
+    # Sort files based on the last digit in their names
+    sorted_files = sorted(files, key=lambda x: int(x.split()[-1].split('.')[0][-1]))
+    
+    # Initialize an empty audio segment
+    merged_audio = AudioSegment.empty()
+    
+    # Loop through each file, in order, and concatenate them
+    for file in sorted_files:
+        audio = AudioSegment.from_wav(os.path.join(folder_path, file))
+        merged_audio += audio
+        print(f"Merged: {file}")
+    
+    # Export the merged audio to a new file
+    merged_audio.export(output_file, format="wav")
+    return "AI配音版.wav"
+
+def convert_from_srt(filename, video_full, language, split_model, multilingual):
+    subtitle_list = read_srt(filename)
+    
+    if os.path.exists("audio_full.wav"):
+        os.remove("audio_full.wav")
+
+    ffmpeg.input(video_full).output("audio_full.wav", ac=2, ar=44100).run()
+    
+    if split_model=="UVR-HP2":
+        pre_fun = pre_fun_hp2
+    else:
+        pre_fun = pre_fun_hp5
+
+    filename = "output"
+    pre_fun._path_audio_("audio_full.wav", f"./denoised/{split_model}/{filename}/", f"./denoised/{split_model}/{filename}/", "wav")
+    if os.path.isdir("output"):
+        shutil.rmtree("output")
+    if multilingual==False:
+        for i in subtitle_list:
+            os.makedirs("output", exist_ok=True)
+            trim_audio([[i.start_time, i.end_time]], f"./denoised/{split_model}/{filename}/vocal_audio_full.wav_10.wav", f"sliced_audio_{i.index}")
+            print(f"正在合成第{i.index}条语音")
+            print(f"语音内容：{i.text}")
+            get_tts_wav(f"sliced_audio_{i.index}_0.wav", "", i18n("中文"), i.text, language, i.text + " " + str(i.index), how_to_cut=i18n("不切"), top_k=20, top_p=0.6, temperature=0.6, ref_free = True)
+    else:
+        for i in subtitle_list:
+            os.makedirs("output", exist_ok=True)
+            trim_audio([[i.start_time, i.end_time]], f"./denoised/{split_model}/{filename}/vocal_audio_full.wav_10.wav", f"sliced_audio_{i.index}")
+            print(f"正在合成第{i.index}条语音")
+            print(f"语音内容：{i.text.splitlines()[1]}")
+            get_tts_wav(f"sliced_audio_{i.index}_0.wav", i.text.splitlines()[0], i18n("中文"), i.text.splitlines()[1], language, i.text.splitlines()[1] + " " + str(i.index), how_to_cut=i18n("不切"), top_k=20, top_p=0.6, temperature=0.6, ref_free = False)
+     
+    return merge_audios("output")
+
 
 with gr.Blocks(title="GPT-SoVITS WebUI") as app:
     gr.Markdown(

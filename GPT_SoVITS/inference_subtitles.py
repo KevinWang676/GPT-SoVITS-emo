@@ -722,6 +722,76 @@ def convert_from_srt(filename, video_full, language, split_model, multilingual):
      
     return merge_audios("output")
 
+
+def convert_from_srt(filename, video_full, language, split_model, multilingual):
+    subtitle_list = read_srt(filename)
+    
+    if os.path.exists("audio_full.wav"):
+        os.remove("audio_full.wav")
+
+    ffmpeg.input(video_full).output("audio_full.wav", ac=2, ar=44100).run()
+    
+    if split_model=="UVR-HP2":
+        pre_fun = pre_fun_hp2
+    else:
+        pre_fun = pre_fun_hp5
+
+    filename = "output"
+    pre_fun._path_audio_("audio_full.wav", f"./denoised/{split_model}/{filename}/", f"./denoised/{split_model}/{filename}/", "wav")
+    if os.path.isdir("output"):
+        shutil.rmtree("output")
+    if multilingual==False:
+        for i in subtitle_list:
+            os.makedirs("output", exist_ok=True)
+            trim_audio([[i.start_time, i.end_time]], f"./denoised/{split_model}/{filename}/vocal_audio_full.wav_10.wav", f"sliced_audio_{i.index}")
+            print(f"正在合成第{i.index}条语音")
+            print(f"语音内容：{i.text}")
+            predict(i.text, language, f"sliced_audio_{i.index}_0.wav", i.text + " " + str(i.index))
+    else:
+        for i in subtitle_list:
+            os.makedirs("output", exist_ok=True)
+            trim_audio([[i.start_time, i.end_time]], f"./denoised/{split_model}/{filename}/vocal_audio_full.wav_10.wav", f"sliced_audio_{i.index}")
+            print(f"正在合成第{i.index}条语音")
+            print(f"语音内容：{i.text.splitlines()[1]}")
+            predict(i.text.splitlines()[1], language, f"sliced_audio_{i.index}_0.wav", i.text.splitlines()[1] + " " + str(i.index))
+     
+    return merge_audios("output")
+
+
+def convert_from_srt(filename, video_full, language, split_model, multilingual):
+
+with gr.Blocks() as app:
+    gr.Markdown("# <center>🌊💕🎶 XTTS - SRT文件一键AI配音</center>")
+    gr.Markdown("### <center>🌟 只需上传SRT文件和原版配音文件即可，每次一集视频AI自动配音！Developed by Kevin Wang </center>")
+    with gr.Row():
+        with gr.Column():
+            inp1 = gr.File(file_count="single", label="请上传一集视频对应的SRT文件")
+            inp2 = gr.Video(label="请上传一集包含原声配音的视频", info="需要是.mp4视频文件")
+            inp3 = gr.Dropdown(
+                label="请选择SRT文件对应的语言",
+                choices=[i18n("中文"), i18n("英文"), i18n("日文"), i18n("中英混合"), i18n("日英混合"), i18n("多语种混合")],
+                max_choices=1,
+                value=i18n("中文"),
+            )
+            inp4 = gr.Dropdown(label="请选择用于分离伴奏的模型", info="UVR-HP5去除背景音乐效果更好，但会对人声造成一定的损伤", choices=["UVR-HP2", "UVR-HP5"], value="UVR-HP5")
+            inp5 = gr.Checkbox(label="SRT文件是否为双语字幕", info="若为双语字幕，请打勾选择（SRT文件中需要先出现中文字幕，后英文字幕；中英字幕各占一行）")
+            btn = gr.Button("一键开启AI配音吧💕", variant="primary")
+        with gr.Column():
+            out1 = gr.Audio(label="为您生成的AI完整配音")
+
+        btn.click(convert_from_srt, [inp1, inp2, inp3, inp4, inp5], [out1])
+        
+    gr.Markdown("### <center>注意❗：请勿生成会对任何个人或组织造成侵害的内容，请尊重他人的著作权和知识产权。用户对此程序的任何使用行为与程序开发者无关。</center>")
+    gr.HTML('''
+        <div class="footer">
+                    <p>🌊🏞️🎶 - 江水东流急，滔滔无尽声。 明·顾璘
+                    </p>
+        </div>
+    ''')
+
+app.launch(share=True, show_error=True)
+
+
 """
 with gr.Blocks(title="GPT-SoVITS WebUI") as app:
     gr.Markdown(

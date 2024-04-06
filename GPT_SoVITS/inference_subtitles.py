@@ -722,42 +722,6 @@ def convert_from_srt(filename, video_full, language, split_model, multilingual):
      
     return merge_audios("output")
 
-
-def convert_from_srt(filename, video_full, language, split_model, multilingual):
-    subtitle_list = read_srt(filename)
-    
-    if os.path.exists("audio_full.wav"):
-        os.remove("audio_full.wav")
-
-    ffmpeg.input(video_full).output("audio_full.wav", ac=2, ar=44100).run()
-    
-    if split_model=="UVR-HP2":
-        pre_fun = pre_fun_hp2
-    else:
-        pre_fun = pre_fun_hp5
-
-    filename = "output"
-    pre_fun._path_audio_("audio_full.wav", f"./denoised/{split_model}/{filename}/", f"./denoised/{split_model}/{filename}/", "wav")
-    if os.path.isdir("output"):
-        shutil.rmtree("output")
-    if multilingual==False:
-        for i in subtitle_list:
-            os.makedirs("output", exist_ok=True)
-            trim_audio([[i.start_time, i.end_time]], f"./denoised/{split_model}/{filename}/vocal_audio_full.wav_10.wav", f"sliced_audio_{i.index}")
-            print(f"正在合成第{i.index}条语音")
-            print(f"语音内容：{i.text}")
-            predict(i.text, language, f"sliced_audio_{i.index}_0.wav", i.text + " " + str(i.index))
-    else:
-        for i in subtitle_list:
-            os.makedirs("output", exist_ok=True)
-            trim_audio([[i.start_time, i.end_time]], f"./denoised/{split_model}/{filename}/vocal_audio_full.wav_10.wav", f"sliced_audio_{i.index}")
-            print(f"正在合成第{i.index}条语音")
-            print(f"语音内容：{i.text.splitlines()[1]}")
-            predict(i.text.splitlines()[1], language, f"sliced_audio_{i.index}_0.wav", i.text.splitlines()[1] + " " + str(i.index))
-     
-    return merge_audios("output")
-
-
 with gr.Blocks() as app:
     gr.Markdown("# <center>🌊💕🎶 XTTS - SRT文件一键AI配音</center>")
     gr.Markdown("### <center>🌟 只需上传SRT文件和原版配音文件即可，每次一集视频AI自动配音！Developed by Kevin Wang </center>")

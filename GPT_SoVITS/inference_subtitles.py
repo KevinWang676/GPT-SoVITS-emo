@@ -722,7 +722,7 @@ def convert_from_srt(filename, video_full, language, split_model, multilingual):
      
     return merge_audios("output")
 
-
+"""
 with gr.Blocks(title="GPT-SoVITS WebUI") as app:
     gr.Markdown(
         value=i18n("本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>LICENSE</b>.")
@@ -792,3 +792,4 @@ app.queue(concurrency_count=511, max_size=1022).launch(
     show_error=True,
     share=True,
 )
+"""

@@ -668,12 +668,21 @@ def trim_audio(intervals, input_file_path, output_file_path):
         # export the segment to a file
         segment.export(output_file_path_i, format='wav')
 
+import re
+
+def sort_key(file_name):
+    """Extract the last number in the file name for sorting."""
+    numbers = re.findall(r'\d+', file_name)
+    if numbers:
+        return int(numbers[-1])
+    return -1  # In case there's no number, this ensures it goes to the start.
+
 def merge_audios(folder_path):
     output_file = "AI配音版.wav"
     # Get all WAV files in the folder
     files = [f for f in os.listdir(folder_path) if f.endswith('.wav')]
     # Sort files based on the last digit in their names
-    sorted_files = sorted(files, key=lambda x: int(x.split()[-1].split('.')[0][-1]))
+    sorted_files = sorted(files, key=sort_key)
     
     # Initialize an empty audio segment
     merged_audio = AudioSegment.empty()

@@ -88,11 +88,11 @@ else:
 
 import ffmpeg
 import urllib.request
-urllib.request.urlretrieve("https://download.openxlab.org.cn/models/Kevin676/rvc-models/weight/UVR-HP2.pth", "tools/uvr5/uvr5_weights/UVR-HP2.pth")
-urllib.request.urlretrieve("https://download.openxlab.org.cn/models/Kevin676/rvc-models/weight/UVR-HP5.pth", "tools/uvr5/uvr5_weights/UVR-HP5.pth")
+urllib.request.urlretrieve("https://download.openxlab.org.cn/models/Kevin676/rvc-models/weight/UVR-HP2.pth", "uvr5/uvr5_weights/UVR-HP2.pth")
+urllib.request.urlretrieve("https://download.openxlab.org.cn/models/Kevin676/rvc-models/weight/UVR-HP5.pth", "uvr5/uvr5_weights/UVR-HP5.pth")
 
 from tools.uvr5.vr import AudioPre
-weight_uvr5_root = "tools/uvr5/uvr5_weights"
+weight_uvr5_root = "uvr5/uvr5_weights"
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
     if name.endswith(".pth") or "onnx" in name:

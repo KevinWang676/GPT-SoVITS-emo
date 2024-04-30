@@ -128,16 +128,19 @@ def hash_numpy_array(audio_path):
 
 def get_se(audio_path, vc_model, target_dir='processed', vad=True):
     device = vc_model.device
+    version = vc_model.version
+    print("OpenVoice version:", version)
 
-    audio_name = f"{os.path.basename(audio_path).rsplit('.', 1)[0]}_{hash_numpy_array(audio_path)}"
+    audio_name = f"{os.path.basename(audio_path).rsplit('.', 1)[0]}_{version}_{hash_numpy_array(audio_path)}"
     se_path = os.path.join(target_dir, audio_name, 'se.pth')
 
-    if os.path.isfile(se_path):
-        se = torch.load(se_path).to(device)
-        return se, audio_name
-    if os.path.isdir(audio_path):
-        wavs_folder = audio_path
-    elif vad:
+    # if os.path.isfile(se_path):
+    #     se = torch.load(se_path).to(device)
+    #     return se, audio_name
+    # if os.path.isdir(audio_path):
+    #     wavs_folder = audio_path
+    
+    if vad:
         wavs_folder = split_audio_vad(audio_path, target_dir=target_dir, audio_name=audio_name)
     else:
         wavs_folder = split_audio_whisper(audio_path, target_dir=target_dir, audio_name=audio_name)
@@ -147,4 +150,3 @@ def get_se(audio_path, vc_model, target_dir='processed', vad=True):
         raise NotImplementedError('No audio segments found!')
     
     return vc_model.extract_se(audio_segs, se_save_path=se_path), audio_name
-

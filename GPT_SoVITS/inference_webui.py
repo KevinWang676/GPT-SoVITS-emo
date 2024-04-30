@@ -20,7 +20,7 @@ else:
     device = "cpu"
 
 ckpt_base = 'checkpoints/base_speakers/EN'
-ckpt_converter = 'checkpoints/converter'
+ckpt_converter = 'checkpoints_v2/converter'
 base_speaker_tts = BaseSpeakerTTS(f'{ckpt_base}/config.json', device=device)
 base_speaker_tts.load_ckpt(f'{ckpt_base}/checkpoint.pth')
 

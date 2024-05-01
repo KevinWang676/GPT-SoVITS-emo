@@ -1,6 +1,6 @@
 ## GPT-SoVITS + OpenVoice: 实现语音的情感控制，一键实现开心、难过、惊恐、低语等情感和语气
 
-### [Colab](https://colab.research.google.com/github/KevinWang676/Bark-Voice-Cloning/blob/main/notebooks/GPT_SoVITS_emo.ipynb)一键开启
+### [Colab](https://colab.research.google.com/github/KevinWang676/Bark-Voice-Cloning/blob/main/notebooks/GPT_SoVITS_emo.ipynb) 一键开启吧！
 
 ###
 

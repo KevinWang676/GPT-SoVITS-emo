@@ -656,7 +656,7 @@ with gr.Blocks(title="GPT-SoVITS WebUI") as app:
                 top_p = gr.Slider(minimum=0,maximum=1,step=0.05,label=i18n("top_p"),value=1,interactive=True)
                 temperature = gr.Slider(minimum=0,maximum=1,step=0.05,label=i18n("temperature"),value=1,interactive=True)
             inference_button = gr.Button(i18n("合成语音"), variant="primary")
-            output = gr.Audio(label=i18n("为您合成的专属情感语音💕"), type="filepath")
+            output = gr.Audio(label="为您合成的专属情感语音💕", type="filepath")
 
         inference_button.click(
             get_tts_wav,
